@@ -17,3 +17,9 @@ class Blog(db.Model):
     def __init__(self, title, post):
         self.title = title
         self.post = post
+
+@app.route("/blog", methods=['GET', 'POST'])
+def blogs():
+    
+
+@app.route("/newpost", methods=['GET', 'POST'])
