@@ -1,21 +1,27 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>BuildABlog</title>
-        <style type="text/css">
-            .error {
-                color: red;
-            }
-        </style>
-    </head>
-    <body>
-        <div style='float: right'>
-          
-        </div>
-        
+<head>
+</head>
+<body>
+<div>
+    <ul>
+        <li><a href="/">Blog Entries</a></li>
+        <li><a href="/newpost">Write a Post</a></li>
+    </ul>
+</div>
+<div>
+    {% with messages = get_flashed_messages(with_categories = True) %}
+        <ul>
+        {% for category, message in messages %}
+            <li>{{message}}</li>
+        {% endfor %}
+        </ul>
+    {% endwith %}
+</div>
+<div>
+    {% block content %}
+    {% endblock %}
+</div>
 
-        {% block content %}
-        {% endblock %}
-
-    </body>
+</body>
 </html>
