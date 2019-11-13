@@ -57,4 +57,4 @@ def create_new_post():
     return render_template('newpost.html', title = "Add a new post", blog_title = blog_title, blog_content = blog_content, title_error = title_error, content_error = content_error)
 
 if __name__ == "__main__":
-app.run()
+    app.run()
