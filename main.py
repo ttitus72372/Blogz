@@ -41,3 +41,20 @@ def create_new_post():
         blog_title = request.form['blog_title']
         blog_content = request.form['blog_content']
         new_post = Blog[blog_title, blog_content]
+
+        if blog_title == "":
+            title_error = "Please enter a title!"
+
+        if blog_content == "":
+            content_error = "Please enter a post!"
+
+        if title_error == "" and content_error == "":
+            db.session.add(new_post)
+            db.session.commit()
+
+            return redirect('/?id={}'.format(new_post.id))
+
+    return render_template('newpost.html', title = "Add a new post", blog_title = blog_title, blog_content = blog_content, title_error = title_error, content_error = content_error)
+
+if __name__ == "__main__":
+app.run()
