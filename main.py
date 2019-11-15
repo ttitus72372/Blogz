@@ -1,9 +1,8 @@
 from flask import Flask, request, redirect, render_template, session, flash
 from flask_sqlalchemy import SQLAlchemy
 import cgi
-
 app = Flask(__name__)
-app.config['DEBUG'] = True      # displays runtime errors in the browser, too
+app.config['DEBUG'] = True
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://builder:builder@localhost:3306/buildAblog'
 app.config['SQLALCHEMY_ECHO'] = True
 
@@ -18,43 +17,47 @@ class Blog(db.Model):
         self.title = title
         self.post = post
 
-@app.route("/blog", methods=['GET', 'POST'])
-def blogs():
-    post_id = request.args.get('id')
-    title = "Build a Blog"
+@app.route('/')
+def index():
+    return redirect('/blog')
 
-    if post_id:
-        blog = Blog.query.filter_by(id = pots_id).all()
-        return render_template('blog.html', title = title, blog = blog, post_id = post_id)
+
+
+@app.route('/blog')
+def blog():
+    blog_id = request.args.get('id')
+
+    if blog_id == None:
+        posts = Blog.query.all()
+        return render_template('blog.html', posts=posts, title='Build-a-blog')
     else:
-        blog = Blog.query.order_by(Blog.id.desc()).all()
-        return render_template('blog.html', title = title, blog = blog)
+        post = Blog.query.get(blog_id)
+        body = Blog.query.get(blog_id)
+        return render_template('post.html', post=post, body=body, title='Blog Entry')
 
-@app.route("/newpost", methods=['GET', 'POST'])
-def create_new_post():
-    blog_title = ""
-    blog_content = ""
-    title_error = ""
-    content_error = ""
-
+@app.route('/newpost', methods=['POST', 'GET'])
+def new_post():
     if request.method == 'POST':
-        blog_title = request.form['blog_title']
-        blog_content = request.form['blog_content']
-        new_post = Blog[blog_title, blog_content]
+        blog_title = request.form['blog-title']
+        blog_body = request.form['blog-entry']
+        title_error = ''
+        body_error = ''
 
-        if blog_title == "":
-            title_error = "Please enter a title!"
+        if not blog_title:
+            title_error = "Please enter a blog title"
+        if not blog_body:
+            body_error = "Please enter a blog entry"
 
-        if blog_content == "":
-            content_error = "Please enter a post!"
+        if not body_error and not title_error:
+            new_entry = Blog(blog_title, blog_body)     
+            db.session.add(new_entry)
+            db.session.commit()        
+            return redirect('/blog?id={}'.format(new_entry.id)) 
+        else:
+            return render_template('newpost.html', title='New Entry', title_error=title_error, body_error=body_error, 
+                blog_title=blog_title, blog_body=blog_body)
+    
+    return render_template('newpost.html', title='New Entry')
 
-        if title_error == "" and content_error == "":
-            db.session.add(new_post)
-            db.session.commit()
-
-            return redirect('/?id={}'.format(new_post.id))
-
-    return render_template('newpost.html', title = "Add a new post", blog_title = blog_title, blog_content = blog_content, title_error = title_error, content_error = content_error)
-
-if __name__ == "__main__":
+if  __name__ == "__main__":
     app.run()
