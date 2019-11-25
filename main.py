@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 import cgi
 app = Flask(__name__)
 app.config['DEBUG'] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://builder:builder@localhost:3306/buildAblog'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://blogz:@localhost:3306/Blogz'
 app.config['SQLALCHEMY_ECHO'] = True
 
 db = SQLAlchemy(app)
@@ -12,10 +12,23 @@ class Blog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(30), unique=True)
     post = db.Column(db.Text())
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
-    def __init__(self, title, post):
+    def __init__(self, title, post, owner):
         self.title = title
         self.post = post
+        self.owner = owner
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(30), unique=True)
+    password = db.Column(db.String(30), unique=False)
+    blogs = db.relationship('Blogs', backref='owner')
+
+    def __init__(self, username, password, blogs):
+        self.username = username
+        self.password = password
+        self.blogs = blogs   
 
 @app.route('/')
 def index():
