@@ -1,21 +1,49 @@
-{% extends "base.html" %}
-
+{% extends "base.html" %} 
 {% block content %}
-    
-    <h1>Build a Blog</h1>
+    {% if session['logged_in'] %}
+        <h1>Welcome to {{ user.username }} Blogz</h1>
 
-    {% if posts|length == 0 %}
-    <h3>No blog posts yet.</h3>
+        <nav>
+        <a href="/logout">Logout</a>
+        </nav>
+        <nav>
+        <a href="/newpost">New Blog Post</a>
+        </nav>
     {% else %}
-    
-    {% for post in posts %}
-    
-    <a href="/blog?id={{post.id}}"><h2>{{post.title}}</h2></a>
-    <p>{{post.post}}</p>
-    <hr>            
-    
-    {% endfor %}  
+        <h1>Welcome to Blogz</h1>
+        <nav>
+        <a href="/signup">Register</a>
+        <div>
+        <a href="/login">Login</a>
+        </div>
+        </nav>
 
     {% endif %}
+
+
+    {% if session['logged_in'] %}
+    <h2>My Previous Blogs</h2>
+    <ul>
+    {% for blog in blogs %}
+    <li>
+
+        <a href="/blog/{{blog.id}}/">{{blog.name}}</a>
+        <p>Author:{{ session['username'] }}</p>
+    </li>
+    {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if not session["logged_in"] %}
+        <h2>Recent Blogs</h2>
+        <hr>
+    {% for blog in data_tuples %}
+
+    <a href="/blog/{{blog[1]}}/">{{blog[0]}}</a>
+    <p>Author:{{ blog[2] }}</p>
+
+    {% endfor %}
+    {% endif %}
+
 
 {% endblock %}
