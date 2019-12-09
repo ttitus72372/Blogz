@@ -10,50 +10,41 @@ db = SQLAlchemy(app)
 
 class Blog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(30), unique=True)
+    title = db.Column(db.String(30), unique=False)
     post = db.Column(db.Text())
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
-    def __init__(self, title, post, owner):
+    def __init__(self, title, post, owner_id):
         self.title = title
         self.post = post
-        self.owner = owner
+        self.owner_id = owner_id
+        
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(30), unique=True)
     password = db.Column(db.String(30), unique=False)
-    blogs = db.relationship('Blogs', backref='owner')
+    blogs = db.relationship('Blog', backref='owner')
 
-    def __init__(self, username, password, blogs):
+    def __init__(self, username, password):
         self.username = username
-        self.password = password
-        self.blogs = blogs   
+        self.password = password   
 
 
 @app.route("/", methods=['GET','POST'])
 def index():
-    blogs = None
-    all_blogs = Blog.query.all()
-
-    data_tuples = []
-
-    user = None
-    try:
-        if session['logged_in']:
-            blogs = Blog.query.filter(User.id == session["author_id"])
-        else:
-            pass
-    except KeyError:
-        pass
-
-    for blog in all_blogs:
-        author_object = User.query.get(blog.author_id)
-        author_username = author_object.username
-        object_tuple=(blog.name, blog.id, author_username)
-        data_tuples.append(object_tuple)
-    return render_template('blog.html', title="Blogz", blogs=blogs, user=user, data_tuples=data_tuples)
-
+    error = None
+    if session['logged_in']:
+        if request.method == 'POST':
+            blog_name = request.form['blog']
+            new_blog = Blog(blog_name)
+            db.session.add(new_blog)
+            db.session.commit()
+            blogs = Blog.query.filter_by(completed=False).all()
+            completed_blogs = Blog.query.filter_by(completed=True).all()
+            return render_template('blog.html', title="Blogz",blogs=blogs,completed_blogs=completed_blogs)
+    return render_template('login.html', error=error)
+    
 
 @app.route('/blog')
 def blog():
@@ -73,16 +64,16 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        user = User.query.filter(User.username == username).first()
-        print(user)
-        print(user.password)
-        print(password)
-        if user.password == password:
+        user = User.query.filter_by(username=username).first()
+        
+        if user and user.password == password:
             session['logged_in'] = True
-            session['author_id'] = user.id
-            print(session)
+            session['user'] = user.username
+            session['user_id'] = user.id
+            
             flash('Welcome')
-            return render_template("blog.html", user=user)
+            blogs = User.query.filter_by(username = session['user']).all()
+            return render_template("blog.html", blogs=blogs, user=user)
         else:
             flash("Error: Try again because you do not have login or account.")
             return render_template('login.html', error=error)
@@ -102,7 +93,7 @@ def signup():
         username = request.form['username']
         existing_username = User.query.filter_by(username=username).first()
         print(existing_username)
-        if not existing_user and not existing_username:
+        if not existing_username:
             new_user = User(username, password)
             db.session.add(new_user)
             db.session.commit()
@@ -115,6 +106,8 @@ def signup():
 
 @app.route('/newpost', methods=['POST', 'GET'])
 def new_post():
+    title_error = ''
+    body_error = ''
     if request.method == 'POST':
         blog_title = request.form['blog-title']
         blog_body = request.form['blog-entry']
@@ -127,27 +120,39 @@ def new_post():
             body_error = "Please enter a blog entry"
 
         if not body_error and not title_error:
-            new_entry = Blog(blog_title, blog_body)     
+            blog_title = request.form['blog-title']
+            blog_body = request.form['blog-entry']
+            owner_id = session['user_id']
+            new_entry = Blog(blog_title, blog_body, owner_id)     
             db.session.add(new_entry)
-            db.session.commit()        
-            return redirect('/blog?id={}'.format(new_entry.id)) 
+            db.session.commit()  
+
+            newentry_id = new_entry.id
+
+            blogs = Blog.query.filter(User.username == session['user'])
+            user = User.query.get(session['user'])     
+            return render_template('blog.html', blogs=blogs, user=user) 
         else:
             return render_template('newpost.html', title='New Entry', title_error=title_error, body_error=body_error, 
                 blog_title=blog_title, blog_body=blog_body)
-    
-    return render_template('newpost.html', title='New Entry')
+    else:
+        return render_template('newpost.html', title='New Entry', title_error=title_error, body_error=body_error)
 
 @app.route("/logout", methods=['GET'])
 def logout():
     session.pop('logged_in', None)
+    del session['user']
+    del session['user_id']
     return render_template("blog.html")
 
 @app.route("/blog/<blog_id>/", methods=['GET'])
 def individual_entry(blog_id):
     blog = Blog.query.filter(blog_id).first()
-    user = User.query.get(session['author_id'])
+    user = User.query.get(session['user'])
 
     return render_template("individual_entry.html",blog=blog, user=user)
+
+app.secret_key='S3CR37K3Y1S5ECR3T'
 
 if  __name__ == "__main__":
     app.run()

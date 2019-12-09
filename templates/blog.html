@@ -1,7 +1,7 @@
 {% extends "base.html" %} 
 {% block content %}
     {% if session['logged_in'] %}
-        <h1>Welcome to {{ user.username }} Blogz</h1>
+        <h1>Welcome to {{ user.username }} Blogs</h1>
 
         <nav>
         <a href="/logout">Logout</a>
@@ -25,11 +25,13 @@
     <h2>My Previous Blogs</h2>
     <ul>
     {% for blog in blogs %}
+    
     <li>
 
-        <a href="/blog/{{blog.id}}/">{{blog.name}}</a>
-        <p>Author:{{ session['username'] }}</p>
+        <a href="/blog/{{blog.id}}/">{{blog.title}}</a>
+        <p>Author:{{ session['user'] }}</p>
     </li>
+    
     {% endfor %}
         </ul>
     {% endif %}
